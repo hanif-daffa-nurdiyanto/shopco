@@ -33,6 +33,7 @@ import type {
   HeaderContent,
   HomepageContent,
   ProductDetailPageContent,
+  ProductSearchPageContent,
   StoreSettingsContent,
 } from '@/types/storefront-content'
 
@@ -42,6 +43,7 @@ type MediaSize = 'openGraph' | 'productCard' | 'productDetail' | 'thumbnail'
 
 const CACHE_SECONDS = 300
 const CATEGORY_PAGE_SIZE = 9
+const SEARCH_PAGE_SIZE = 9
 const REVIEW_PAGE_SIZE = 6
 let payloadPromise: Promise<Payload> | undefined
 
@@ -257,10 +259,7 @@ const queryProductSelector = async (
     { _status: { equals: 'published' } },
   ]
   if (selector.automaticSource === 'featured') conditions.push({ isFeatured: { equals: true } })
-  if (
-    selector.automaticSource === 'newArrivals' ||
-    selector.automaticSource === 'topSelling'
-  ) {
+  if (selector.automaticSource === 'newArrivals' || selector.automaticSource === 'topSelling') {
     conditions.push({ featuredSections: { contains: selector.automaticSource } })
   }
 
@@ -346,9 +345,7 @@ const queryHomepage = async (options: StorefrontQueryOptions = {}): Promise<Home
     seo: {
       canonicalUrl: homepage.meta?.canonicalUrl ?? '/',
       description:
-        homepage.meta?.description ??
-        homepage.heroDescription ??
-        fallbackHomepage.seo.description,
+        homepage.meta?.description ?? homepage.heroDescription ?? fallbackHomepage.seo.description,
       image: getMediaUrl(homepage.meta?.image, 'openGraph', fallbackHomepage.seo.image),
       title: homepage.meta?.title ?? fallbackHomepage.seo.title,
     },
@@ -378,12 +375,7 @@ const getPositiveNumber = (value: string | string[] | undefined) => {
 const parseCategoryFilters = (searchParams: SearchParams): CategoryFilters => {
   const requestedPage = Math.floor(getPositiveNumber(searchParams.page) ?? 1)
   const requestedSort = Array.isArray(searchParams.sort) ? searchParams.sort[0] : searchParams.sort
-  const allowedSorts: CatalogSort[] = [
-    'popular',
-    'newest',
-    'priceAscending',
-    'priceDescending',
-  ]
+  const allowedSorts: CatalogSort[] = ['popular', 'newest', 'priceAscending', 'priceDescending']
 
   return {
     brandIds: getParamValues(searchParams.brand)
@@ -400,6 +392,16 @@ const parseCategoryFilters = (searchParams: SearchParams): CategoryFilters => {
   }
 }
 
+const parseProductSearch = (searchParams: SearchParams) => {
+  const rawQuery = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q
+  const requestedPage = Math.floor(getPositiveNumber(searchParams.page) ?? 1)
+
+  return {
+    page: Math.max(1, requestedPage),
+    query: rawQuery?.trim().slice(0, 100) ?? '',
+  }
+}
+
 const getProductSort = (sort: CatalogSort) =>
   ({
     newest: '-publishedAt',
@@ -408,17 +410,10 @@ const getProductSort = (sort: CatalogSort) =>
     priceDescending: '-price',
   })[sort]
 
-const buildProductWhere = (
-  categoryId: number,
-  filters: CategoryFilters,
-  draft = false,
-): Where => {
+const buildProductWhere = (categoryId: number, filters: CategoryFilters, draft = false): Where => {
   const conditions: Where[] = [{ category: { equals: categoryId } }]
   if (!draft) {
-    conditions.push(
-      { visibility: { equals: 'catalog' } },
-      { _status: { equals: 'published' } },
-    )
+    conditions.push({ visibility: { equals: 'catalog' } }, { _status: { equals: 'published' } })
   }
 
   if (filters.minPrice != null) conditions.push({ price: { greater_than_equal: filters.minPrice } })
@@ -500,6 +495,65 @@ const queryCategoryPage = async (
   }
 }
 
+const queryProductSearch = async (query: string, page = 1): Promise<ProductSearchPageContent> => {
+  if (!query) {
+    return {
+      pagination: {
+        hasNextPage: false,
+        hasPrevPage: false,
+        page: 1,
+        totalDocs: 0,
+        totalPages: 0,
+      },
+      products: [],
+      query,
+    }
+  }
+
+  const payload = await getPayloadInstance()
+  const result = await payload.find({
+    collection: 'products',
+    depth: 1,
+    limit: SEARCH_PAGE_SIZE,
+    overrideAccess: false,
+    page,
+    pagination: true,
+    select: {
+      compareAtPrice: true,
+      featuredImage: true,
+      name: true,
+      price: true,
+      slug: true,
+    },
+    sort: '-sortPriority',
+    where: {
+      and: [
+        { visibility: { equals: 'catalog' } },
+        { _status: { equals: 'published' } },
+        {
+          or: [
+            { name: { like: query } },
+            { shortDescription: { like: query } },
+            { sku: { like: query } },
+          ],
+        },
+      ],
+    },
+  })
+
+  return {
+    pagination: {
+      hasNextPage: result.hasNextPage,
+      hasPrevPage: result.hasPrevPage,
+      page: result.page ?? page,
+      totalDocs: result.totalDocs,
+      totalPages: result.totalPages,
+    },
+    products: result.docs.map((product) => mapProduct(product as PayloadProduct)),
+    query,
+  }
+}
+
 const queryApprovedReviews = async (productId: number, page = 1, limit = REVIEW_PAGE_SIZE) => {
   const payload = await getPayloadInstance()
   const result = await payload.find({
@@ -577,8 +631,7 @@ const queryProductDetail = async (
       colors: colors.length > 0 ? colors : ['#000000'],
       description: product.shortDescription,
       details: (product.details ?? []).map(({ label, value }) => ({ label, value })),
-      gallery:
-        gallery.length > 0 ? gallery : [getMediaUrl(product.featuredImage, 'productDetail')],
+      gallery: gallery.length > 0 ? gallery : [getMediaUrl(product.featuredImage, 'productDetail')],
       sku: product.sku,
       sizes: sizes.length > 0 ? sizes : ['One Size'],
       variants: (product.variants ?? []).map((variant) => ({
@@ -591,9 +644,7 @@ const queryProductDetail = async (
         stock: variant.stock,
       })),
     },
-    relatedProducts: (product.relatedProducts ?? [])
-      .filter(isPopulatedProduct)
-      .map(mapProduct),
+    relatedProducts: (product.relatedProducts ?? []).filter(isPopulatedProduct).map(mapProduct),
     reviews: reviewResult.docs,
     seo: {
       canonicalUrl: product.meta?.canonicalUrl ?? `/product/${product.slug}`,
@@ -625,6 +676,10 @@ const cachedCategoryPage = unstable_cache(queryCategoryPage, ['category-page'], 
   revalidate: CACHE_SECONDS,
   tags: ['payload:categories', 'payload:products'],
 })
+const cachedProductSearch = unstable_cache(queryProductSearch, ['product-search'], {
+  revalidate: CACHE_SECONDS,
+  tags: ['payload:products'],
+})
 const cachedProductDetail = unstable_cache(queryProductDetail, ['product-detail-v2'], {
   revalidate: CACHE_SECONDS,
   tags: ['payload:products', 'payload:reviews'],
@@ -636,9 +691,13 @@ const cachedApprovedReviews = unstable_cache(queryApprovedReviews, ['approved-re
 
 const getStoreSettings = async () => cachedStoreSettings().catch(() => fallbackStoreSettings)
 const getHeader = async (options: StorefrontQueryOptions = {}) =>
-  options.draft ? queryHeader(options).catch(() => fallbackHeader) : cachedHeader().catch(() => fallbackHeader)
+  options.draft
+    ? queryHeader(options).catch(() => fallbackHeader)
+    : cachedHeader().catch(() => fallbackHeader)
 const getFooter = async (options: StorefrontQueryOptions = {}) =>
-  options.draft ? queryFooter(options).catch(() => fallbackFooter) : cachedFooter().catch(() => fallbackFooter)
+  options.draft
+    ? queryFooter(options).catch(() => fallbackFooter)
+    : cachedFooter().catch(() => fallbackFooter)
 const getHomepage = async (options: StorefrontQueryOptions = {}) =>
   options.draft
     ? queryHomepage(options).catch(() => fallbackHomepage)
@@ -657,6 +716,32 @@ const getProductDetail = async (slug: string, options: StorefrontQueryOptions = 
   options.draft
     ? queryProductDetail(slug, options).catch(() => getFallbackProductDetail(slug))
     : cachedProductDetail(slug).catch(() => getFallbackProductDetail(slug))
+const getProductSearch = async (searchParams: SearchParams = {}) => {
+  const { page, query } = parseProductSearch(searchParams)
+  const matchingFallbackProducts = query
+    ? [...fallbackHomepage.newArrivals, ...fallbackHomepage.topSelling]
+        .filter(
+          (product, index, products) => products.findIndex(({ id }) => id === product.id) === index,
+        )
+        .filter((product) => product.name.toLowerCase().includes(query.toLowerCase()))
+    : []
+  const fallbackProducts = matchingFallbackProducts.slice(
+    (page - 1) * SEARCH_PAGE_SIZE,
+    page * SEARCH_PAGE_SIZE,
+  )
+
+  return cachedProductSearch(query, page).catch(() => ({
+    pagination: {
+      hasNextPage: page * SEARCH_PAGE_SIZE < matchingFallbackProducts.length,
+      hasPrevPage: page > 1,
+      page,
+      totalDocs: matchingFallbackProducts.length,
+      totalPages: Math.ceil(matchingFallbackProducts.length / SEARCH_PAGE_SIZE),
+    },
+    products: fallbackProducts,
+    query,
+  }))
+}
 const getApprovedReviews = async (productId: number, page = 1, limit = REVIEW_PAGE_SIZE) =>
   cachedApprovedReviews(productId, page, limit)
 
@@ -667,14 +752,17 @@ export {
   getHeader,
   getHomepage,
   getProductDetail,
+  getProductSearch,
   getStoreSettings,
   mapProduct,
   parseCategoryFilters,
+  parseProductSearch,
   queryCategoryPage,
   queryFooter,
   queryHeader,
   queryHomepage,
   queryProductDetail,
+  queryProductSearch,
   queryStoreSettings,
 }
 export type { SearchParams, StorefrontQueryOptions }

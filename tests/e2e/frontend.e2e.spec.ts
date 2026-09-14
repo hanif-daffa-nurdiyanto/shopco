@@ -12,13 +12,48 @@ test.describe('Payload storefront', () => {
     await expect(page.getByText('Shop.co © 2000-2026, All Rights Reserved')).toBeVisible()
   })
 
+  test('searches published products from the header on desktop and mobile', async ({ page }) => {
+    await page.goto('http://localhost:3000')
+
+    await page.getByLabel('Search products').fill('One Life')
+    await page.getByLabel('Search products').press('Enter')
+
+    await expect(page).toHaveURL(/\/search\?q=One(?:\+|%20)Life/)
+    await expect(page.getByRole('heading', { name: 'Search results' })).toBeVisible()
+    await expect(page.getByText('One Life Graphic T-shirt').first()).toBeVisible()
+
+    await page.setViewportSize({ height: 844, width: 390 })
+    await page.goto('http://localhost:3000')
+    await page.getByRole('button', { name: 'Search', exact: true }).click()
+    await page.getByLabel('Search products').last().fill('Skinny Jeans')
+    await page.getByRole('button', { name: 'Search', exact: true }).last().click()
+
+    await expect(page).toHaveURL(/\/search\?q=Skinny(?:\+|%20)Jeans/)
+    await expect(page.getByText('Faded Skinny Jeans').first()).toBeVisible()
+  })
+
   test('applies Category filters and sorting from search params', async ({ page }) => {
     await page.goto('http://localhost:3000/category/casual?maxPrice=130&sort=priceAscending')
 
     await expect(page.getByRole('heading', { name: 'Casual' })).toBeVisible()
     await expect(page.locator('#catalog-sort')).toHaveValue('priceAscending')
+    await expect(page.getByLabel('Minimum price')).toHaveValue('0')
+    await expect(page.getByLabel('Maximum price')).toHaveValue('130')
     await expect(page.getByText('Black Striped T-shirt')).toBeVisible()
     await expect(page.getByText('Faded Skinny Jeans')).toHaveCount(0)
+
+    await page.getByLabel('Minimum price').fill('100')
+    await page.getByLabel('Maximum price').fill('150')
+    await page.getByRole('button', { name: 'Apply Filter' }).click()
+
+    await expect(page).toHaveURL(/minPrice=100/)
+    await expect(page).toHaveURL(/maxPrice=150/)
+    await expect(page.getByText('Gradient Graphic T-shirt')).toBeVisible()
+
+    await page.setViewportSize({ height: 844, width: 390 })
+    await page.getByRole('button', { name: 'Open filters' }).click()
+    await expect(page.getByLabel('Minimum price').last()).toBeVisible()
+    await expect(page.getByLabel('Maximum price').last()).toBeVisible()
   })
 
   test('renders a useful empty state when Category filters have no matches', async ({ page }) => {
@@ -57,9 +92,7 @@ test.describe('Payload storefront', () => {
       /\/product\/one-life-graphic-t-shirt$/,
     )
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /.+/)
-    const structuredData = await page
-      .locator('script[type="application/ld\+json"]')
-      .textContent()
+    const structuredData = await page.locator('script[type="application/ld\+json"]').textContent()
     expect(structuredData).toContain('"@type":"Product"')
 
     const previewResponse = await request.get(
@@ -79,12 +112,12 @@ test.describe('Payload storefront', () => {
 
     for (const route of routes) {
       await page.goto(`http://localhost:3000${route}`)
-      const mainBottom = await page.locator('main').evaluate((element) =>
-        element.getBoundingClientRect().bottom,
-      )
-      const newsletterTop = await page.locator('#newsletter').evaluate((element) =>
-        element.getBoundingClientRect().top,
-      )
+      const mainBottom = await page
+        .locator('main')
+        .evaluate((element) => element.getBoundingClientRect().bottom)
+      const newsletterTop = await page
+        .locator('#newsletter')
+        .evaluate((element) => element.getBoundingClientRect().top)
 
       expect(newsletterTop, `Newsletter overlaps page content on ${route}`).toBeGreaterThanOrEqual(
         mainBottom,
@@ -98,9 +131,13 @@ test.describe('Payload storefront', () => {
     await page.goto('http://localhost:3000/product/one-life-graphic-t-shirt')
     await page.getByRole('button', { name: 'Add to Cart' }).click()
     await expect(page.getByRole('status')).toHaveText('Added to cart.')
+    await expect(page.getByLabel('Cart item count')).toHaveText('1')
 
     await page.goto('http://localhost:3000/cart')
     await expect(page.getByRole('heading', { name: 'One Life Graphic T-shirt' })).toBeVisible()
+    await expect(page.getByLabel('Cart item count')).toHaveText('1')
+    await page.getByRole('button', { name: 'Increase quantity' }).click()
+    await expect(page.getByLabel('Cart item count')).toHaveText('2')
     await page.getByRole('link', { name: 'Go to Checkout' }).click()
 
     await page.getByPlaceholder('Full name').fill('E2E Customer')

@@ -110,6 +110,18 @@ type CategoryPageContent = {
   products: Product[]
 }
 
+type ProductSearchPageContent = {
+  pagination: {
+    hasNextPage: boolean
+    hasPrevPage: boolean
+    page: number
+    totalDocs: number
+    totalPages: number
+  }
+  products: Product[]
+  query: string
+}
+
 type ProductDetailPageContent = {
   product: ProductDetail
   relatedProducts: Product[]
@@ -126,6 +138,7 @@ export type {
   HeaderContent,
   HeaderNavigationItem,
   HomepageContent,
+  ProductSearchPageContent,
   ProductDetailPageContent,
   SeoContent,
   StoreSettingsContent,

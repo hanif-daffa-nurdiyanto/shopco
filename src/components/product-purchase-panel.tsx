@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useState } from 'react'
 
+import { dispatchCartUpdated } from '@/libs/cart-events'
 import type { CartSessionItem, ResolvedCart } from '@/types/cart'
 import type { ProductDetail, ProductVariantOption } from '@/types/product-detail'
 
@@ -54,7 +55,9 @@ const ProductPurchasePanel = ({ product }: { product: ProductDetail }) => {
       <fieldset>
         <legend className="text-muted">Select Colors</legend>
         <div className="mt-4 flex gap-4">
-          {[...new Map(product.variants?.map((variant) => [variant.colorHex, variant])).values()].map((variant) => (
+          {[
+            ...new Map(product.variants?.map((variant) => [variant.colorHex, variant])).values(),
+          ].map((variant) => (
             <button
               aria-label={`Select color ${variant.colorName}`}
               className="flex size-9 items-center justify-center rounded-full"
@@ -62,7 +65,9 @@ const ProductPurchasePanel = ({ product }: { product: ProductDetail }) => {
               onClick={() => selectVariant((candidate) => candidate.colorHex === variant.colorHex)}
               style={{ backgroundColor: variant.colorHex }}
             >
-              {selectedVariant?.colorHex === variant.colorHex && <span className="text-lg text-white">✓</span>}
+              {selectedVariant?.colorHex === variant.colorHex && (
+                <span className="text-lg text-white">✓</span>
+              )}
             </button>
           ))}
         </div>
@@ -123,15 +128,23 @@ const ProductPurchasePanel = ({ product }: { product: ProductDetail }) => {
                   item.productId === Number(product.id) && item.variantId === selectedVariant.id,
               )
               if (existing) existing.quantity += quantity
-              else items.push({ productId: Number(product.id), quantity, variantId: selectedVariant.id })
+              else
+                items.push({
+                  productId: Number(product.id),
+                  quantity,
+                  variantId: selectedVariant.id,
+                })
 
               const response = await fetch('/api/storefront/cart', {
                 body: JSON.stringify({ items }),
                 headers: { 'Content-Type': 'application/json' },
                 method: 'PUT',
               })
-              const result = (await response.json()) as { error?: { message?: string } }
+              const result = (await response.json()) as ResolvedCart & {
+                error?: { message?: string }
+              }
               if (!response.ok) throw new Error(result.error?.message || 'Unable to add item.')
+              dispatchCartUpdated(result)
               setMessage('Added to cart.')
             } catch (cause) {
               setMessage(cause instanceof Error ? cause.message : 'Unable to add item.')
@@ -143,7 +156,11 @@ const ProductPurchasePanel = ({ product }: { product: ProductDetail }) => {
           {pending ? 'Adding…' : 'Add to Cart'}
         </button>
       </div>
-      {message && <p className="mt-3 text-sm text-muted" role="status">{message}</p>}
+      {message && (
+        <p className="mt-3 text-sm text-muted" role="status">
+          {message}
+        </p>
+      )}
     </div>
   )
 }

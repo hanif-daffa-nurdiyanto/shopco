@@ -7,15 +7,26 @@ import { resolveCart } from '@/libs/cart-resolver'
 import { CART_COOKIE_NAME, decodeCartSession } from '@/libs/cart-session'
 import config from '@/payload.config'
 
-const getServerCart = async () => {
+const getServerCartItems = async () => {
   const [cookieStore, payloadConfig] = await Promise.all([cookies(), config])
-  const items = decodeCartSession(
-    cookieStore.get(CART_COOKIE_NAME)?.value,
-    payloadConfig.secret,
-  )
+
+  return {
+    items: decodeCartSession(cookieStore.get(CART_COOKIE_NAME)?.value, payloadConfig.secret),
+    payloadConfig,
+  }
+}
+
+const getServerCart = async () => {
+  const { items, payloadConfig } = await getServerCartItems()
   const payload = await getPayload({ config: payloadConfig })
 
   return resolveCart(payload, items)
 }
 
-export { getServerCart }
+const getServerCartQuantity = async () => {
+  const { items } = await getServerCartItems()
+
+  return items.reduce((total, item) => total + item.quantity, 0)
+}
+
+export { getServerCart, getServerCartQuantity }

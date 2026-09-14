@@ -4,6 +4,8 @@ import Image from 'next/image'
 
 import type { CategoryFilters as CategoryFilterValues } from '@/types/storefront-content'
 
+import { PriceRangeSlider } from './price-range-slider'
+
 const colors = [
   '#00C12B',
   '#F50606',
@@ -35,31 +37,20 @@ const CategoryFilters = ({ action, filters, onApply }: Props) => (
       </div>
       <div className="my-5 border-t border-black/10" />
       <section>
-        <h3 className="text-xl font-bold">Price</h3>
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <label className="text-sm text-muted">
-            Minimum
-            <input
-              className="mt-2 w-full rounded-lg border border-black/10 px-3 py-2 text-ink"
-              defaultValue={filters.minPrice}
-              min="0"
-              name="minPrice"
-              placeholder="$0"
-              type="number"
-            />
-          </label>
-          <label className="text-sm text-muted">
-            Maximum
-            <input
-              className="mt-2 w-full rounded-lg border border-black/10 px-3 py-2 text-ink"
-              defaultValue={filters.maxPrice}
-              min="0"
-              name="maxPrice"
-              placeholder="$300"
-              type="number"
-            />
-          </label>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold">Price</h3>
+          <Image
+            alt=""
+            className="rotate-180"
+            height={16}
+            src="/images/figma/chevron-down.svg"
+            width={16}
+          />
         </div>
+        <PriceRangeSlider
+          initialMaximum={filters.maxPrice}
+          initialMinimum={filters.minPrice}
+        />
       </section>
       <div className="my-5 border-t border-black/10" />
       <fieldset>

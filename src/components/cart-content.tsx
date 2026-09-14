@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 
+import { dispatchCartUpdated } from '@/libs/cart-events'
 import type { CartSessionItem, ResolvedCart } from '@/types/cart'
 
 import { CartItem } from './cart-item'
@@ -25,6 +26,7 @@ const CartContent = ({ initialCart }: { initialCart: ResolvedCart }) => {
       }
       if (!response.ok) throw new Error(result.error?.message || 'Unable to update cart.')
       setCart(result)
+      dispatchCartUpdated(result)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to update cart.')
     } finally {
