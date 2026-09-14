@@ -3,13 +3,16 @@ import config from '../../src/payload.config.js'
 
 export const testUser = {
   email: 'dev@payloadcms.com',
+  name: 'Development Admin',
   password: 'test',
+  roles: ['admin'] as Array<'admin' | 'customer' | 'editor'>,
+  status: 'active' as const,
 }
 
 /**
  * Seeds a test user for e2e admin tests.
  */
-export async function seedTestUser(): Promise<void> {
+export const seedTestUser = async (): Promise<void> => {
   const payload = await getPayload({ config })
 
   // Delete existing test user if any
@@ -32,7 +35,7 @@ export async function seedTestUser(): Promise<void> {
 /**
  * Cleans up test user after tests
  */
-export async function cleanupTestUser(): Promise<void> {
+export const cleanupTestUser = async (): Promise<void> => {
   const payload = await getPayload({ config })
 
   await payload.delete({

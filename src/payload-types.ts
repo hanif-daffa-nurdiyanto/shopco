@@ -69,6 +69,12 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    brands: Brand;
+    categories: Category;
+    products: Product;
+    reviews: Review;
+    promotions: Promotion;
+    orders: Order;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,17 +84,33 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    brands: BrandsSelect<false> | BrandsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
+    reviews: ReviewsSelect<false> | ReviewsSelect<true>;
+    promotions: PromotionsSelect<false> | PromotionsSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'store-settings': StoreSetting;
+    header: Header;
+    footer: Footer;
+    homepage: Homepage;
+  };
+  globalsSelect: {
+    'store-settings': StoreSettingsSelect<false> | StoreSettingsSelect<true>;
+    header: HeaderSelect<false> | HeaderSelect<true>;
+    footer: FooterSelect<false> | FooterSelect<true>;
+    homepage: HomepageSelect<false> | HomepageSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -122,7 +144,10 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
+  name: string;
+  roles: ('admin' | 'editor' | 'customer')[];
+  status: 'active' | 'inactive';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -147,8 +172,9 @@ export interface User {
  * via the `definition` "media".
  */
 export interface Media {
-  id: string;
+  id: number;
   alt: string;
+  caption?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -160,13 +186,331 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    productCard?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    productDetail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    openGraph?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands".
+ */
+export interface Brand {
+  id: number;
+  name: string;
+  description?: string | null;
+  website?: string | null;
+  logo: number | Media;
+  logoLight?: (number | null) | Media;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  /**
+   * Tampilkan brand pada brand strip storefront.
+   */
+  isFeatured?: boolean | null;
+  sortOrder?: number | null;
+  /**
+   * Brand nonaktif tidak tampil di storefront.
+   */
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  name: string;
+  description?: string | null;
+  heroImage?: (number | null) | Media;
+  featuredProducts?: (number | Product)[] | null;
+  defaultSort: 'popular' | 'newest' | 'priceAscending' | 'priceDescending';
+  showFilters?: boolean | null;
+  availableFilterGroups?: ('price' | 'color' | 'size' | 'brand' | 'dressStyle')[] | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    image?: (number | null) | Media;
+    canonicalUrl?: string | null;
+  };
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  parent?: (number | null) | Category;
+  /**
+   * Kategori tersembunyi tidak tampil di storefront.
+   */
+  isVisible?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  name: string;
+  shortDescription: string;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  details?:
+    | {
+        label: string;
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  featuredImage: number | Media;
+  gallery: {
+    image: number | Media;
+    altOverride?: string | null;
+    id?: string | null;
+  }[];
+  sku: string;
+  /**
+   * Simpan dalam unit mata uang utama, bukan sen.
+   */
+  price: number;
+  /**
+   * Harga awal sebelum diskon.
+   */
+  compareAtPrice?: number | null;
+  /**
+   * Hanya dapat dilihat dan diubah oleh admin.
+   */
+  costPrice?: number | null;
+  trackInventory?: boolean | null;
+  stock?: number | null;
+  /**
+   * Gunakan variant bila stok dibedakan berdasarkan ukuran atau warna.
+   */
+  variants?:
+    | {
+        color: {
+          name: string;
+          hex: string;
+        };
+        size: string;
+        sku: string;
+        priceOverride?: number | null;
+        stock: number;
+        isActive?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  stockStatus?: ('inStock' | 'lowStock' | 'outOfStock') | null;
+  badge: 'none' | 'new' | 'sale' | 'bestSeller';
+  relatedProducts?: (number | Product)[] | null;
+  featuredSections?: ('newArrivals' | 'topSelling')[] | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    image?: (number | null) | Media;
+    canonicalUrl?: string | null;
+  };
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  category: number | Category;
+  brand?: (number | null) | Brand;
+  /**
+   * Hanya Catalog yang dapat dibaca publik.
+   */
+  visibility: 'catalog' | 'hidden' | 'archived';
+  isFeatured?: boolean | null;
+  sortPriority?: number | null;
+  publishedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews".
+ */
+export interface Review {
+  id: number;
+  authorName: string;
+  authorEmail: string;
+  content: string;
+  rating: number;
+  verifiedPurchase?: boolean | null;
+  moderatorNotes?: string | null;
+  moderatedBy?: (number | null) | User;
+  moderatedAt?: string | null;
+  product: number | Product;
+  status: 'pending' | 'approved' | 'rejected' | 'spam';
+  featured?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotions".
+ */
+export interface Promotion {
+  id: number;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  minimumSubtotal?: number | null;
+  maximumDiscount?: number | null;
+  appliesTo: 'all' | 'products' | 'categories';
+  products?: (number | Product)[] | null;
+  categories?: (number | Category)[] | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  usageLimit?: number | null;
+  usageLimitPerCustomer?: number | null;
+  /**
+   * Diperbarui oleh proses checkout, bukan input pelanggan.
+   */
+  usedCount: number;
+  isActive?: boolean | null;
+  priority?: number | null;
+  status?: ('scheduled' | 'active' | 'expired' | 'exhausted' | 'inactive') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  /**
+   * Snapshot item dikunci setelah order dibuat.
+   */
+  items: {
+    product?: (number | null) | Product;
+    productSnapshotId: string;
+    categoryId?: string | null;
+    productName: string;
+    sku: string;
+    variant?: {
+      id?: string | null;
+      color?: string | null;
+      size?: string | null;
+    };
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+    id?: string | null;
+  }[];
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string | null;
+  shippingAddress: {
+    recipientName: string;
+    line1: string;
+    line2?: string | null;
+    city: string;
+    province: string;
+    postalCode: string;
+    country: string;
+  };
+  billingSameAsShipping?: boolean | null;
+  billingAddress?: {
+    recipientName?: string | null;
+    line1?: string | null;
+    line2?: string | null;
+    city?: string | null;
+    province?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
+  };
+  deliveryMethod: 'standard' | 'express' | 'pickup';
+  paymentProvider?: ('manual' | 'stripe' | 'midtrans') | null;
+  paymentReference?: string | null;
+  subtotal: number;
+  discount: number;
+  deliveryFee: number;
+  taxRate: number;
+  tax: number;
+  total: number;
+  timeline?:
+    | {
+        status: string;
+        message: string;
+        occurredAt: string;
+        id?: string | null;
+      }[]
+    | null;
+  internalNotes?: string | null;
+  /**
+   * Kunci retry checkout. Dibuat oleh storefront dan tidak dapat diubah.
+   */
+  idempotencyKey?: string | null;
+  orderNumber?: string | null;
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  fulfillmentStatus: 'unfulfilled' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  customer?: (number | null) | User;
+  promotion?: (number | null) | Promotion;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: string;
+  id: number;
   key: string;
   data:
     | {
@@ -183,20 +527,44 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string;
+  id: number;
   document?:
     | ({
         relationTo: 'users';
-        value: string | User;
+        value: number | User;
       } | null)
     | ({
         relationTo: 'media';
-        value: string | Media;
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'brands';
+        value: number | Brand;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'products';
+        value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'reviews';
+        value: number | Review;
+      } | null)
+    | ({
+        relationTo: 'promotions';
+        value: number | Promotion;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: number | Order;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -206,10 +574,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string;
+  id: number;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   key?: string | null;
   value?:
@@ -229,7 +597,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string;
+  id: number;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -240,6 +608,9 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  roles?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -263,6 +634,7 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  caption?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -274,6 +646,288 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        productCard?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        productDetail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        openGraph?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands_select".
+ */
+export interface BrandsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  website?: T;
+  logo?: T;
+  logoLight?: T;
+  generateSlug?: T;
+  slug?: T;
+  isFeatured?: T;
+  sortOrder?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  heroImage?: T;
+  featuredProducts?: T;
+  defaultSort?: T;
+  showFilters?: T;
+  availableFilterGroups?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        canonicalUrl?: T;
+      };
+  generateSlug?: T;
+  slug?: T;
+  parent?: T;
+  isVisible?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  name?: T;
+  shortDescription?: T;
+  description?: T;
+  details?:
+    | T
+    | {
+        label?: T;
+        value?: T;
+        id?: T;
+      };
+  featuredImage?: T;
+  gallery?:
+    | T
+    | {
+        image?: T;
+        altOverride?: T;
+        id?: T;
+      };
+  sku?: T;
+  price?: T;
+  compareAtPrice?: T;
+  costPrice?: T;
+  trackInventory?: T;
+  stock?: T;
+  variants?:
+    | T
+    | {
+        color?:
+          | T
+          | {
+              name?: T;
+              hex?: T;
+            };
+        size?: T;
+        sku?: T;
+        priceOverride?: T;
+        stock?: T;
+        isActive?: T;
+        id?: T;
+      };
+  stockStatus?: T;
+  badge?: T;
+  relatedProducts?: T;
+  featuredSections?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        canonicalUrl?: T;
+      };
+  generateSlug?: T;
+  slug?: T;
+  category?: T;
+  brand?: T;
+  visibility?: T;
+  isFeatured?: T;
+  sortPriority?: T;
+  publishedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "reviews_select".
+ */
+export interface ReviewsSelect<T extends boolean = true> {
+  authorName?: T;
+  authorEmail?: T;
+  content?: T;
+  rating?: T;
+  verifiedPurchase?: T;
+  moderatorNotes?: T;
+  moderatedBy?: T;
+  moderatedAt?: T;
+  product?: T;
+  status?: T;
+  featured?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "promotions_select".
+ */
+export interface PromotionsSelect<T extends boolean = true> {
+  code?: T;
+  type?: T;
+  value?: T;
+  minimumSubtotal?: T;
+  maximumDiscount?: T;
+  appliesTo?: T;
+  products?: T;
+  categories?: T;
+  startsAt?: T;
+  endsAt?: T;
+  usageLimit?: T;
+  usageLimitPerCustomer?: T;
+  usedCount?: T;
+  isActive?: T;
+  priority?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        product?: T;
+        productSnapshotId?: T;
+        categoryId?: T;
+        productName?: T;
+        sku?: T;
+        variant?:
+          | T
+          | {
+              id?: T;
+              color?: T;
+              size?: T;
+            };
+        quantity?: T;
+        unitPrice?: T;
+        lineTotal?: T;
+        id?: T;
+      };
+  customerName?: T;
+  customerEmail?: T;
+  customerPhone?: T;
+  shippingAddress?:
+    | T
+    | {
+        recipientName?: T;
+        line1?: T;
+        line2?: T;
+        city?: T;
+        province?: T;
+        postalCode?: T;
+        country?: T;
+      };
+  billingSameAsShipping?: T;
+  billingAddress?:
+    | T
+    | {
+        recipientName?: T;
+        line1?: T;
+        line2?: T;
+        city?: T;
+        province?: T;
+        postalCode?: T;
+        country?: T;
+      };
+  deliveryMethod?: T;
+  paymentProvider?: T;
+  paymentReference?: T;
+  subtotal?: T;
+  discount?: T;
+  deliveryFee?: T;
+  taxRate?: T;
+  tax?: T;
+  total?: T;
+  timeline?:
+    | T
+    | {
+        status?: T;
+        message?: T;
+        occurredAt?: T;
+        id?: T;
+      };
+  internalNotes?: T;
+  idempotencyKey?: T;
+  orderNumber?: T;
+  paymentStatus?: T;
+  fulfillmentStatus?: T;
+  customer?: T;
+  promotion?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -314,6 +968,384 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "store-settings".
+ */
+export interface StoreSetting {
+  id: number;
+  storeName: string;
+  supportEmail?: string | null;
+  supportPhone?: string | null;
+  locale: string;
+  currency: 'USD' | 'IDR';
+  defaultProductImage?: (number | null) | Media;
+  defaultDeliveryFee: number;
+  freeShippingThreshold?: number | null;
+  taxRate: number;
+  pricesIncludeTax?: boolean | null;
+  /**
+   * Durasi cart session sebelum dianggap kedaluwarsa.
+   */
+  cartSessionMinutes: number;
+  titleTemplate: string;
+  defaultDescription?: string | null;
+  defaultShareImage?: (number | null) | Media;
+  /**
+   * Gunakan hanya saat storefront harus dinonaktifkan sementara.
+   */
+  maintenanceMode?: boolean | null;
+  catalogEnabled?: boolean | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
+export interface Header {
+  id: number;
+  announcementEnabled?: boolean | null;
+  announcementMessage?: string | null;
+  announcementLinkLabel?: string | null;
+  announcementLinkUrl?: string | null;
+  announcementStartsAt?: string | null;
+  announcementEndsAt?: string | null;
+  logoType: 'text' | 'image';
+  logoText?: string | null;
+  logoImage?: (number | null) | Media;
+  navigationItems?:
+    | {
+        label: string;
+        type: 'internal' | 'external';
+        category?: (number | null) | Category;
+        url?: string | null;
+        newTab?: boolean | null;
+        children?:
+          | {
+              label: string;
+              url: string;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  searchPlaceholder: string;
+  cartLabel: string;
+  accountLabel: string;
+  isActive?: boolean | null;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  logoType: 'text' | 'image';
+  logoText?: string | null;
+  logoImage?: (number | null) | Media;
+  brandDescription?: string | null;
+  socialLinks?:
+    | {
+        platform: 'facebook' | 'instagram' | 'twitter' | 'youtube' | 'github';
+        url: string;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  linkGroups?:
+    | {
+        heading: string;
+        links: {
+          label: string;
+          url: string;
+          newTab?: boolean | null;
+          id?: string | null;
+        }[];
+        id?: string | null;
+      }[]
+    | null;
+  newsletterHeading?: string | null;
+  newsletterEmailPlaceholder?: string | null;
+  newsletterSubmitLabel?: string | null;
+  newsletterSuccessMessage?: string | null;
+  newsletterErrorMessage?: string | null;
+  copyright?: string | null;
+  legalLinks?:
+    | {
+        label: string;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  paymentMethods?:
+    | {
+        name: string;
+        logo: number | Media;
+        alt: string;
+        id?: string | null;
+      }[]
+    | null;
+  isActive?: boolean | null;
+  showNewsletter?: boolean | null;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage".
+ */
+export interface Homepage {
+  id: number;
+  heroHeading: string;
+  heroDescription?: string | null;
+  heroCtaLabel?: string | null;
+  heroCtaUrl?: string | null;
+  heroImage: number | Media;
+  heroMobileImage?: (number | null) | Media;
+  statistics?:
+    | {
+        value: string;
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  brandsHeading?: string | null;
+  brands?: (number | Brand)[] | null;
+  newArrivalsHeading?: string | null;
+  newArrivals: {
+    mode: 'manual' | 'automatic';
+    products?: (number | Product)[] | null;
+    automaticSource?: ('featured' | 'newArrivals' | 'topSelling') | null;
+    category?: (number | null) | Category;
+    limit: number;
+  };
+  topSellingHeading?: string | null;
+  topSelling: {
+    mode: 'manual' | 'automatic';
+    products?: (number | Product)[] | null;
+    automaticSource?: ('featured' | 'newArrivals' | 'topSelling') | null;
+    category?: (number | null) | Category;
+    limit: number;
+  };
+  dressStylesHeading?: string | null;
+  dressStyles?:
+    | {
+        label: string;
+        image: number | Media;
+        category: number | Category;
+        id?: string | null;
+      }[]
+    | null;
+  testimonialsHeading?: string | null;
+  testimonials?: (number | Review)[] | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    image?: (number | null) | Media;
+    canonicalUrl?: string | null;
+  };
+  structuredDataEnabled?: boolean | null;
+  publishedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "store-settings_select".
+ */
+export interface StoreSettingsSelect<T extends boolean = true> {
+  storeName?: T;
+  supportEmail?: T;
+  supportPhone?: T;
+  locale?: T;
+  currency?: T;
+  defaultProductImage?: T;
+  defaultDeliveryFee?: T;
+  freeShippingThreshold?: T;
+  taxRate?: T;
+  pricesIncludeTax?: T;
+  cartSessionMinutes?: T;
+  titleTemplate?: T;
+  defaultDescription?: T;
+  defaultShareImage?: T;
+  maintenanceMode?: T;
+  catalogEnabled?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header_select".
+ */
+export interface HeaderSelect<T extends boolean = true> {
+  announcementEnabled?: T;
+  announcementMessage?: T;
+  announcementLinkLabel?: T;
+  announcementLinkUrl?: T;
+  announcementStartsAt?: T;
+  announcementEndsAt?: T;
+  logoType?: T;
+  logoText?: T;
+  logoImage?: T;
+  navigationItems?:
+    | T
+    | {
+        label?: T;
+        type?: T;
+        category?: T;
+        url?: T;
+        newTab?: T;
+        children?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  searchPlaceholder?: T;
+  cartLabel?: T;
+  accountLabel?: T;
+  isActive?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer_select".
+ */
+export interface FooterSelect<T extends boolean = true> {
+  logoType?: T;
+  logoText?: T;
+  logoImage?: T;
+  brandDescription?: T;
+  socialLinks?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        label?: T;
+        id?: T;
+      };
+  linkGroups?:
+    | T
+    | {
+        heading?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              newTab?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  newsletterHeading?: T;
+  newsletterEmailPlaceholder?: T;
+  newsletterSubmitLabel?: T;
+  newsletterSuccessMessage?: T;
+  newsletterErrorMessage?: T;
+  copyright?: T;
+  legalLinks?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        id?: T;
+      };
+  paymentMethods?:
+    | T
+    | {
+        name?: T;
+        logo?: T;
+        alt?: T;
+        id?: T;
+      };
+  isActive?: T;
+  showNewsletter?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage_select".
+ */
+export interface HomepageSelect<T extends boolean = true> {
+  heroHeading?: T;
+  heroDescription?: T;
+  heroCtaLabel?: T;
+  heroCtaUrl?: T;
+  heroImage?: T;
+  heroMobileImage?: T;
+  statistics?:
+    | T
+    | {
+        value?: T;
+        label?: T;
+        id?: T;
+      };
+  brandsHeading?: T;
+  brands?: T;
+  newArrivalsHeading?: T;
+  newArrivals?:
+    | T
+    | {
+        mode?: T;
+        products?: T;
+        automaticSource?: T;
+        category?: T;
+        limit?: T;
+      };
+  topSellingHeading?: T;
+  topSelling?:
+    | T
+    | {
+        mode?: T;
+        products?: T;
+        automaticSource?: T;
+        category?: T;
+        limit?: T;
+      };
+  dressStylesHeading?: T;
+  dressStyles?:
+    | T
+    | {
+        label?: T;
+        image?: T;
+        category?: T;
+        id?: T;
+      };
+  testimonialsHeading?: T;
+  testimonials?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        canonicalUrl?: T;
+      };
+  structuredDataEnabled?: T;
+  publishedAt?: T;
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

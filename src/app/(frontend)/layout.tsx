@@ -1,19 +1,59 @@
 import React from 'react'
+import type { Metadata } from 'next'
+
+import { LivePreviewListener } from '@/components/live-preview-listener'
+import { SiteFooter } from '@/components/site-footer'
+import { SiteHeader } from '@/components/site-header'
+import { getPreviewContext } from '@/libs/preview-context'
+import { getSiteURL } from '@/libs/seo'
+import { getFooter, getHeader, getStoreSettings } from '@/libs/storefront-data'
+
 import './styles.css'
 
-export const metadata = {
-  description: 'A blank template using Payload in a Next.js app.',
-  title: 'Payload Blank Template',
+const generateMetadata = async (): Promise<Metadata> => {
+  const settings = await getStoreSettings()
+
+  return {
+    description: settings.defaultDescription,
+    metadataBase: getSiteURL(),
+    openGraph: {
+      description: settings.defaultDescription,
+      images: [{ url: settings.defaultShareImage }],
+      siteName: settings.storeName,
+      title: settings.storeName,
+      type: 'website',
+    },
+    title: {
+      default: settings.storeName,
+      template: settings.titleTemplate,
+    },
+  }
 }
 
-export default async function RootLayout(props: { children: React.ReactNode }) {
-  const { children } = props
+const RootLayout = async ({ children }: { children: React.ReactNode }) => {
+  const preview = await getPreviewContext()
+  const [footer, header, settings] = await Promise.all([
+    getFooter(preview),
+    getHeader(preview),
+    getStoreSettings(),
+  ])
 
   return (
-    <html lang="en">
+    <html lang={settings.locale.split('-')[0]}>
       <body>
-        <main>{children}</main>
+        {preview.draft && <LivePreviewListener serverURL={getSiteURL().origin} />}
+        <SiteHeader content={header} />
+        {settings.maintenanceMode && (
+          <p className="bg-sale px-4 py-3 text-center text-sm font-medium text-sale-text">
+            SHOP.CO is currently undergoing maintenance. Browsing remains available.
+          </p>
+        )}
+        {children}
+        <SiteFooter content={footer} />
       </body>
     </html>
   )
 }
+
+export { generateMetadata }
+export default RootLayout

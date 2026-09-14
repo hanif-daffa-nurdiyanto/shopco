@@ -5,8 +5,19 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
-import { Users } from './collections/Users'
-import { Media } from './collections/Media'
+import { Brands } from './collections/brands-collection'
+import { Categories } from './collections/categories-collection'
+import { Media } from './collections/media-collection'
+import { Orders } from './collections/orders-collection'
+import { Products } from './collections/products-collection'
+import { Promotions } from './collections/promotions-collection'
+import { Reviews } from './collections/reviews-collection'
+import { Users } from './collections/users-collection'
+import { storefrontCommerceEndpoints } from './endpoints/storefront-commerce'
+import { Footer } from './globals/footer'
+import { Header } from './globals/header'
+import { Homepage } from './globals/homepage'
+import { StoreSettings } from './globals/store-settings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -18,7 +29,9 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media],
+  collections: [Users, Media, Brands, Categories, Products, Reviews, Promotions, Orders],
+  endpoints: storefrontCommerceEndpoints,
+  globals: [StoreSettings, Header, Footer, Homepage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
