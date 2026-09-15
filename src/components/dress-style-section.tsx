@@ -16,14 +16,18 @@ const DressStyleSection = ({ dressStyles, dressStylesHeading }: Props) => (
           href={style.url}
           key={style.name}
         >
-          <Image
-            alt={`${style.name} style`}
-            className="object-cover"
-            fill
-            sizes="(max-width: 768px) 100vw, 60vw"
-            src={style.image}
-          />
-          <span className="absolute top-6 left-6 z-10 text-2xl font-bold md:text-4xl">
+          <div
+            className={`absolute inset-y-0 right-0 w-[62%] ${index === 1 || index === 2 ? 'md:w-[75%]' : ''}`}
+          >
+            <Image
+              alt={`${style.name} style`}
+              className="object-cover object-left"
+              fill
+              sizes="(max-width: 768px) 62vw, 40vw"
+              src={style.image}
+            />
+          </div>
+          <span className="absolute top-6 left-6 z-10 max-w-[38%] whitespace-nowrap text-2xl font-bold md:text-4xl">
             {style.name}
           </span>
         </a>

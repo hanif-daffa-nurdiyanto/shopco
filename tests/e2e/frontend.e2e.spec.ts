@@ -12,6 +12,33 @@ test.describe('Payload storefront', () => {
     await expect(page.getByText('Shop.co © 2000-2026, All Rights Reserved')).toBeVisible()
   })
 
+  test('shows visible social icons and inverts them on hover', async ({ page }) => {
+    await page.goto('http://localhost:3000')
+
+    const facebookLink = page.getByRole('link', { name: /Facebook/i })
+    const facebookIcon = facebookLink.locator('[data-social-icon="facebook"]')
+
+    await expect(facebookLink).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+    await expect(facebookIcon).toHaveCSS('background-color', 'rgb(0, 0, 0)')
+
+    await facebookLink.hover()
+
+    await expect(facebookLink).toHaveCSS('background-color', 'rgb(0, 0, 0)')
+    await expect(facebookIcon).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+  })
+
+  test('resets scroll position after opening View All', async ({ page }) => {
+    await page.goto('http://localhost:3000')
+
+    const viewAll = page.getByRole('link', { name: 'View All' }).first()
+    await viewAll.scrollIntoViewIfNeeded()
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+    await viewAll.click()
+
+    await expect(page).toHaveURL(/\/category\/casual/)
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+  })
+
   test('searches published products from the header on desktop and mobile', async ({ page }) => {
     await page.goto('http://localhost:3000')
 
@@ -136,10 +163,28 @@ test.describe('Payload storefront', () => {
     await page.goto('http://localhost:3000/cart')
     await expect(page.getByRole('heading', { name: 'One Life Graphic T-shirt' })).toBeVisible()
     await expect(page.getByLabel('Cart item count')).toHaveText('1')
+    await page.getByLabel('Promo code').fill('NOT-A-PROMOTION')
+    await page.getByRole('button', { name: 'Apply' }).click()
+    await expect(page.getByText('Promotion code is invalid.', { exact: true })).toBeVisible()
+    await expect(page.getByText('Discount', { exact: true })).toBeVisible()
+
+    await page.getByLabel('Promo code').fill('shopco20')
+    await page.getByRole('button', { name: 'Apply' }).click()
+    await expect(page.getByRole('status')).toHaveText('Promo code SHOPCO20 applied.')
+    await expect(page.getByText('Discount (-20%)')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Go to Checkout' })).toHaveAttribute(
+      'href',
+      '/checkout?promoCode=SHOPCO20',
+    )
+
     await page.getByRole('button', { name: 'Increase quantity' }).click()
     await expect(page.getByLabel('Cart item count')).toHaveText('2')
+    await page.getByLabel('Promo code').fill('SHOPCO20')
+    await page.getByRole('button', { name: 'Apply' }).click()
+    await expect(page.getByRole('status')).toHaveText('Promo code SHOPCO20 applied.')
     await page.getByRole('link', { name: 'Go to Checkout' }).click()
 
+    await expect(page.getByPlaceholder('Promo code')).toHaveValue('SHOPCO20')
     await page.getByPlaceholder('Full name').fill('E2E Customer')
     await page.getByPlaceholder('Email', { exact: true }).fill('e2e.checkout@example.com')
     await page.getByPlaceholder('Recipient name').fill('E2E Customer')

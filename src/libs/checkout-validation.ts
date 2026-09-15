@@ -36,6 +36,12 @@ const parseAddress = (value: unknown): CheckoutAddress => {
   }
 }
 
+const parsePromotionCodeInput = (value: unknown) => {
+  if (!isRecord(value)) throw new CheckoutValidationError('Promotion payload is invalid.')
+
+  return readText(value.code, 'Promotion code', 50)!.toUpperCase()
+}
+
 const parseCheckoutInput = (value: unknown): CheckoutInput => {
   if (!isRecord(value) || !isRecord(value.customer)) {
     throw new CheckoutValidationError('Checkout payload is invalid.')
@@ -52,7 +58,11 @@ const parseCheckoutInput = (value: unknown): CheckoutInput => {
   }
 
   const allowedDeliveryMethods = ['express', 'pickup', 'standard'] as const
-  if (!allowedDeliveryMethods.includes(value.deliveryMethod as (typeof allowedDeliveryMethods)[number])) {
+  if (
+    !allowedDeliveryMethods.includes(
+      value.deliveryMethod as (typeof allowedDeliveryMethods)[number],
+    )
+  ) {
     throw new CheckoutValidationError('Delivery method is invalid.')
   }
   if (value.paymentProvider !== 'manual') {
@@ -73,4 +83,4 @@ const parseCheckoutInput = (value: unknown): CheckoutInput => {
   }
 }
 
-export { CheckoutValidationError, parseCheckoutInput }
+export { CheckoutValidationError, parseCheckoutInput, parsePromotionCodeInput }

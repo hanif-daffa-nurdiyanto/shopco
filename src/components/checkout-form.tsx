@@ -7,7 +7,13 @@ import type { CheckoutResult, ResolvedCart } from '@/types/cart'
 const inputClassName =
   'h-12 w-full rounded-xl border border-black/10 px-4 text-sm outline-none focus:border-black/40'
 
-const CheckoutForm = ({ cart }: { cart: ResolvedCart }) => {
+const CheckoutForm = ({
+  cart,
+  defaultPromoCode,
+}: {
+  cart: ResolvedCart
+  defaultPromoCode?: string
+}) => {
   const idempotencyKey = useRef('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
@@ -74,7 +80,13 @@ const CheckoutForm = ({ cart }: { cart: ResolvedCart }) => {
         <h1 className="font-display text-3xl font-bold uppercase">Shipping details</h1>
         <div className="grid gap-4 md:grid-cols-2">
           <input className={inputClassName} name="name" placeholder="Full name" required />
-          <input className={inputClassName} name="email" placeholder="Email" required type="email" />
+          <input
+            className={inputClassName}
+            name="email"
+            placeholder="Email"
+            required
+            type="email"
+          />
           <input className={inputClassName} name="phone" placeholder="Phone (optional)" />
           <input
             className={inputClassName}
@@ -110,7 +122,9 @@ const CheckoutForm = ({ cart }: { cart: ResolvedCart }) => {
         <div className="mt-5 space-y-3">
           {cart.items.map((item) => (
             <div className="flex justify-between gap-4 text-sm" key={item.key}>
-              <span>{item.name} × {item.quantity}</span>
+              <span>
+                {item.name} × {item.quantity}
+              </span>
               <strong>${item.lineTotal}</strong>
             </div>
           ))}
@@ -119,13 +133,23 @@ const CheckoutForm = ({ cart }: { cart: ResolvedCart }) => {
             <strong>${cart.subtotal}</strong>
           </div>
         </div>
-        <input className={`${inputClassName} mt-5`} name="promoCode" placeholder="Promo code" />
+        <input
+          className={`${inputClassName} mt-5 uppercase placeholder:normal-case`}
+          defaultValue={defaultPromoCode}
+          maxLength={50}
+          name="promoCode"
+          placeholder="Promo code"
+        />
         <select className={`${inputClassName} mt-3`} name="deliveryMethod" defaultValue="standard">
           <option value="standard">Standard delivery</option>
           <option value="express">Express delivery</option>
           <option value="pickup">Pickup</option>
         </select>
-        {error && <p className="mt-3 text-sm text-sale-text" role="alert">{error}</p>}
+        {error && (
+          <p className="mt-3 text-sm text-sale-text" role="alert">
+            {error}
+          </p>
+        )}
         <button
           className="mt-5 h-13.5 w-full rounded-full bg-ink font-medium text-white disabled:bg-black/30"
           disabled={pending}

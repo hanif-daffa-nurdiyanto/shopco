@@ -40,6 +40,7 @@ import type {
 type SearchParams = Record<string, string | string[] | undefined>
 type StorefrontQueryOptions = { draft?: boolean; user?: User }
 type MediaSize = 'openGraph' | 'productCard' | 'productDetail' | 'thumbnail'
+type MediaUrlSource = Pick<Media, 'sizes' | 'url'>
 
 const CACHE_SECONDS = 300
 const CATEGORY_PAGE_SIZE = 9
@@ -55,11 +56,13 @@ const getPayloadInstance = () => {
   return payloadPromise
 }
 
-const isPopulatedMedia = (value: Media | null | number | undefined): value is Media =>
+const isPopulatedMedia = (
+  value: MediaUrlSource | null | number | undefined,
+): value is MediaUrlSource =>
   typeof value === 'object' && value !== null
 
 const getMediaUrl = (
-  value: Media | null | number | undefined,
+  value: MediaUrlSource | null | number | undefined,
   size?: MediaSize,
   fallback = '/images/figma/hero.png',
 ) => {
@@ -117,8 +120,10 @@ const queryStoreSettings = async (): Promise<StoreSettingsContent> => {
     select: {
       catalogEnabled: true,
       currency: true,
+      defaultDeliveryFee: true,
       defaultDescription: true,
       defaultShareImage: true,
+      freeShippingThreshold: true,
       locale: true,
       maintenanceMode: true,
       storeName: true,
@@ -130,12 +135,14 @@ const queryStoreSettings = async (): Promise<StoreSettingsContent> => {
   return {
     catalogEnabled: settings.catalogEnabled !== false,
     currency: settings.currency,
+    defaultDeliveryFee: settings.defaultDeliveryFee,
     defaultDescription: settings.defaultDescription ?? fallbackStoreSettings.defaultDescription,
     defaultShareImage: getMediaUrl(
       settings.defaultShareImage,
       'openGraph',
       fallbackStoreSettings.defaultShareImage,
     ),
+    freeShippingThreshold: settings.freeShippingThreshold,
     locale: settings.locale,
     maintenanceMode: settings.maintenanceMode === true,
     storeName: settings.storeName,
@@ -308,6 +315,7 @@ const queryHomepage = async (options: StorefrontQueryOptions = {}): Promise<Home
       meta: true,
       newArrivals: true,
       newArrivalsHeading: true,
+      statistics: true,
       testimonials: true,
       testimonialsHeading: true,
       topSelling: true,
@@ -316,18 +324,41 @@ const queryHomepage = async (options: StorefrontQueryOptions = {}): Promise<Home
     },
     slug: 'homepage',
   })) as Homepage
-  const [newArrivals, topSelling] = await Promise.all([
+  const featuredBrands = (homepage.brands ?? []).filter(isPopulatedBrand)
+  const brandLogoIds = featuredBrands
+    .map((brand) => brand.logo)
+    .filter((logo): logo is number => typeof logo === 'number')
+  const [newArrivals, topSelling, brandLogosResult] = await Promise.all([
     queryProductSelector(payload, homepage.newArrivals, options),
     queryProductSelector(payload, homepage.topSelling, options),
+    brandLogoIds.length > 0
+      ? payload.find({
+          collection: 'media',
+          depth: 0,
+          limit: brandLogoIds.length,
+          overrideAccess: false,
+          pagination: false,
+          select: { sizes: true, url: true },
+          user: options.user,
+          where: { id: { in: brandLogoIds } },
+        })
+      : Promise.resolve({ docs: [] as Media[] }),
   ])
+  const brandLogosById = new Map(brandLogosResult.docs.map((media) => [media.id, media]))
 
   return {
-    brands: (homepage.brands ?? []).filter(isPopulatedBrand).map((brand) => ({
-      image: getMediaUrl(brand.logo, 'thumbnail', '/images/figma/versace.svg'),
-      name: brand.name,
-    })),
+    brands: featuredBrands
+      .map((brand) => ({
+        image: getMediaUrl(
+          typeof brand.logo === 'number' ? brandLogosById.get(brand.logo) : brand.logo,
+          'thumbnail',
+          fallbackHomepage.brands.find(({ name }) => name === brand.name)?.image ?? '',
+        ),
+        name: brand.name,
+      }))
+      .filter(({ image }) => image.length > 0),
     dressStyles: (homepage.dressStyles ?? []).map((style) => ({
-      image: getMediaUrl(style.image, 'productCard'),
+      image: getMediaUrl(style.image),
       name: style.label,
       url: isPopulatedCategory(style.category) ? `/category/${style.category.slug}` : '#',
     })),
@@ -337,7 +368,7 @@ const queryHomepage = async (options: StorefrontQueryOptions = {}): Promise<Home
       ctaUrl: homepage.heroCtaUrl ?? fallbackHomepage.hero.ctaUrl,
       description: homepage.heroDescription ?? fallbackHomepage.hero.description,
       heading: homepage.heroHeading,
-      image: getMediaUrl(homepage.heroImage, 'productDetail'),
+      image: getMediaUrl(homepage.heroImage),
       statistics: homepage.statistics ?? [],
     },
     newArrivals,

@@ -12,8 +12,10 @@ type SeoContent = {
 type StoreSettingsContent = {
   catalogEnabled: boolean
   currency: 'IDR' | 'USD'
+  defaultDeliveryFee: number
   defaultDescription: string
   defaultShareImage: string
+  freeShippingThreshold?: null | number
   locale: string
   maintenanceMode: boolean
   storeName: string

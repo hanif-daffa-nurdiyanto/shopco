@@ -93,9 +93,9 @@ const testimonials: Testimonial[] = [
 ]
 const dressStyles = [
   { image: `${imageRoot}/style-casual.png`, name: 'Casual' },
-  { image: `${imageRoot}/style-formal.png`, name: 'Formal' },
-  { image: `${imageRoot}/style-party.png`, name: 'Party' },
-  { image: `${imageRoot}/style-gym.png`, name: 'Gym' },
+  { image: `${imageRoot}/style-party.png`, name: 'Formal' },
+  { image: `${imageRoot}/style-gym.png`, name: 'Party' },
+  { image: `${imageRoot}/style-formal.png`, name: 'Gym' },
 ]
 
 export { dressStyles, imageRoot, newArrivals, testimonials, topSelling }

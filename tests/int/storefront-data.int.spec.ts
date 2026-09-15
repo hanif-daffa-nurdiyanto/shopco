@@ -20,6 +20,7 @@ import {
   queryStoreSettings,
 } from '@/libs/storefront-data'
 import { seedShopco } from '@/seed/seed-shopco'
+import type { Homepage, Media } from '@/payload-types'
 import config from '@/payload.config'
 
 describe.sequential('typed storefront data access', () => {
@@ -48,6 +49,20 @@ describe.sequential('typed storefront data access', () => {
     expect(homepage.newArrivals.map(({ name }) => name)).toEqual(
       fallbackHomepage.newArrivals.map(({ name }) => name),
     )
+    expect(homepage.hero.statistics).toEqual(fallbackHomepage.hero.statistics)
+    expect(homepage.brands.map(({ name }) => name)).toEqual(
+      fallbackHomepage.brands.map(({ name }) => name),
+    )
+    expect(new Set(homepage.brands.map(({ image }) => image)).size).toBe(homepage.brands.length)
+    expect(homepage.dressStyles.map(({ name }) => name)).toEqual(
+      fallbackHomepage.dressStyles.map(({ name }) => name),
+    )
+    const homepageGlobal = (await payload.findGlobal({
+      depth: 1,
+      select: { heroImage: true },
+      slug: 'homepage',
+    })) as Homepage
+    expect(homepage.hero.image).toBe((homepageGlobal.heroImage as Media).url)
   })
 
   it('applies category sorting, filters, and pagination explicitly', async () => {

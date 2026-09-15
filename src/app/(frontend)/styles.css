@@ -25,7 +25,7 @@
   --color-sale-text: #ff3333;
   --font-sans: 'Satoshi', Arial, sans-serif;
   --font-display: 'Integral CF', 'Arial Black', sans-serif;
-  --spacing-site: 1240px;
+  --spacing-site: min(1240px, calc(100% - 32px));
 }
 
 @layer base {
@@ -51,5 +51,25 @@
   }
   button {
     cursor: pointer;
+  }
+}
+
+@keyframes brand-marquee-slide {
+  to {
+    transform: translateX(calc(-50% - 32px));
+  }
+}
+
+.brand-marquee-track {
+  animation: brand-marquee-slide 24s linear infinite;
+}
+
+.brand-marquee:hover .brand-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-marquee-track {
+    animation: none;
   }
 }

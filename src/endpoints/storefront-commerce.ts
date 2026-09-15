@@ -9,8 +9,13 @@ import {
   getCookieValue,
   normalizeCartItems,
 } from '@/libs/cart-session'
-import { CheckoutError, checkout } from '@/libs/checkout'
-import { CheckoutValidationError, parseCheckoutInput } from '@/libs/checkout-validation'
+import { calculateOrderTotals } from '@/libs/commerce-calculations'
+import { CheckoutError, checkout, getPromotionRule, resolvePromotion } from '@/libs/checkout'
+import {
+  CheckoutValidationError,
+  parseCheckoutInput,
+  parsePromotionCodeInput,
+} from '@/libs/checkout-validation'
 import type { StoreSetting } from '@/payload-types'
 import { headersWithCors, type Endpoint, type PayloadRequest } from 'payload'
 
@@ -120,12 +125,76 @@ const clearCartEndpoint: Endpoint = {
   path: '/storefront/cart',
 }
 
+const applyCartPromotionEndpoint: Endpoint = {
+  handler: async (req) => {
+    try {
+      assertSameOrigin(req)
+      const code = parsePromotionCodeInput(await readJson(req))
+      const cart = await resolveCart(req.payload, getCartItems(req), req)
+      if (cart.items.length === 0) throw new CheckoutError('emptyCart', 'Cart is empty.')
+      if (cart.issues.length > 0) {
+        throw new CheckoutError('invalidCart', 'Cart contains unavailable items.')
+      }
+
+      const calculationItems = cart.items.map((item) => ({
+        categoryId: item.categoryId,
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.price,
+      }))
+      const [promotion, settings] = await Promise.all([
+        resolvePromotion(req, code, calculationItems),
+        req.payload.findGlobal({
+          depth: 0,
+          overrideAccess: true,
+          req,
+          select: {
+            defaultDeliveryFee: true,
+            freeShippingThreshold: true,
+          },
+          slug: 'store-settings',
+        }) as Promise<StoreSetting>,
+      ])
+      if (!promotion) throw new CheckoutError('invalidPromo', 'Promotion code is invalid.')
+
+      const totals = calculateOrderTotals({
+        delivery: {
+          baseFee: settings.defaultDeliveryFee,
+          freeDeliveryThreshold: settings.freeShippingThreshold,
+        },
+        items: calculationItems,
+        promotion: getPromotionRule(promotion),
+        taxRate: 0,
+      })
+
+      return Response.json(
+        {
+          promotion: {
+            code: promotion.code,
+            type: promotion.type,
+            value: promotion.value,
+          },
+          totals,
+        },
+        { headers: responseHeaders(req) },
+      )
+    } catch (error) {
+      return toErrorResponse(req, error)
+    }
+  },
+  method: 'post',
+  path: '/storefront/cart/promotion',
+}
+
 const checkoutEndpoint: Endpoint = {
   handler: async (req) => {
     try {
       assertSameOrigin(req)
       if (req.user && !hasRole(req.user, ['customer'])) {
-        throw new CheckoutValidationError('Only customer accounts can use storefront checkout.', 403)
+        throw new CheckoutValidationError(
+          'Only customer accounts can use storefront checkout.',
+          403,
+        )
       }
 
       const input = parseCheckoutInput(await readJson(req))
@@ -146,6 +215,7 @@ const storefrontCommerceEndpoints = [
   getCartEndpoint,
   updateCartEndpoint,
   clearCartEndpoint,
+  applyCartPromotionEndpoint,
   checkoutEndpoint,
 ]
 

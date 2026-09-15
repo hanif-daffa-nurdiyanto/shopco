@@ -3,12 +3,17 @@
 import { useState } from 'react'
 
 import { dispatchCartUpdated } from '@/libs/cart-events'
-import type { CartSessionItem, ResolvedCart } from '@/types/cart'
+import type { CartPricingConfig, CartSessionItem, ResolvedCart } from '@/types/cart'
 
 import { CartItem } from './cart-item'
 import { OrderSummary } from './order-summary'
 
-const CartContent = ({ initialCart }: { initialCart: ResolvedCart }) => {
+type Props = {
+  initialCart: ResolvedCart
+  pricing: CartPricingConfig
+}
+
+const CartContent = ({ initialCart, pricing }: Props) => {
   const [cart, setCart] = useState(initialCart)
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
@@ -65,7 +70,12 @@ const CartContent = ({ initialCart }: { initialCart: ResolvedCart }) => {
           <p className="py-16 text-center text-muted">Your cart is empty.</p>
         )}
       </div>
-      <OrderSummary hasItems={cart.items.length > 0} subtotal={cart.subtotal} />
+      <OrderSummary
+        hasItems={cart.items.length > 0}
+        key={cart.items.map(({ key, quantity }) => `${key}:${quantity}`).join('|')}
+        pricing={pricing}
+        subtotal={cart.subtotal}
+      />
       {(error || cart.issues.length > 0) && (
         <div className="md:col-span-2" role="alert">
           {error && <p className="text-sm text-sale-text">{error}</p>}

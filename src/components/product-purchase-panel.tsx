@@ -60,13 +60,18 @@ const ProductPurchasePanel = ({ product }: { product: ProductDetail }) => {
           ].map((variant) => (
             <button
               aria-label={`Select color ${variant.colorName}`}
-              className="flex size-9 items-center justify-center rounded-full"
+              className="flex size-9 items-center justify-center rounded-full border border-black/10"
               key={variant.colorHex}
               onClick={() => selectVariant((candidate) => candidate.colorHex === variant.colorHex)}
               style={{ backgroundColor: variant.colorHex }}
+              type="button"
             >
               {selectedVariant?.colorHex === variant.colorHex && (
-                <span className="text-lg text-white">✓</span>
+                <span
+                  className={`text-lg ${['#FFF', '#FFFFFF'].includes(variant.colorHex.toUpperCase()) ? 'text-ink' : 'text-white'}`}
+                >
+                  ✓
+                </span>
               )}
             </button>
           ))}

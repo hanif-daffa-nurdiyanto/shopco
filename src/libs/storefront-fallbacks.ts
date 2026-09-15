@@ -15,8 +15,10 @@ import type {
 const fallbackStoreSettings: StoreSettingsContent = {
   catalogEnabled: true,
   currency: 'USD',
+  defaultDeliveryFee: 15,
   defaultDescription: 'Find clothes that match your style at SHOP.CO.',
   defaultShareImage: '/images/figma/hero.png',
+  freeShippingThreshold: 250,
   locale: 'en-US',
   maintenanceMode: false,
   storeName: 'SHOP.CO',
@@ -135,7 +137,10 @@ const fallbackHomepage: HomepageContent = {
   topSellingHeading: 'TOP SELLING',
 }
 
-const getFallbackCategory = (slug: string, filters: CategoryFilters): CategoryPageContent | null => {
+const getFallbackCategory = (
+  slug: string,
+  filters: CategoryFilters,
+): CategoryPageContent | null => {
   if (slug !== 'casual') return null
 
   const pageSize = 9

@@ -18,16 +18,16 @@ const HeroSection = ({ hero }: { hero: HomepageContent['hero'] }) => (
         >
           {hero.ctaLabel}
         </a>
-        <div className="mx-auto mt-5 flex max-w-[350px] flex-wrap justify-center gap-y-4 md:mx-0 md:mt-12 md:max-w-none md:flex-nowrap md:justify-start">
+        <div className="mx-auto mt-6 grid max-w-[350px] grid-cols-2 gap-y-5 md:mx-0 md:mt-12 md:max-w-none lg:grid-cols-3">
           {hero.statistics.map((statistic, index) => (
             <div
-              className={`px-5 ${index === 1 ? 'border-l border-black/10' : ''}`}
+              className={`min-w-0 px-4 lg:px-3 xl:px-5 ${index === 0 ? 'pl-0' : ''} ${index === 1 ? 'border-l border-black/10' : ''} ${index === 2 ? 'col-span-2 text-center lg:col-span-1 lg:border-l lg:border-black/10 lg:text-left' : ''}`}
               key={statistic.label}
             >
-              <strong className="block text-2xl leading-none md:text-[40px]">
+              <strong className="block text-2xl leading-none font-bold lg:text-[28px] xl:text-[40px]">
                 {statistic.value}
               </strong>
-              <span className="text-xs text-muted md:text-base">{statistic.label}</span>
+              <span className="text-xs text-muted lg:text-sm xl:text-base">{statistic.label}</span>
             </div>
           ))}
         </div>
@@ -35,7 +35,7 @@ const HeroSection = ({ hero }: { hero: HomepageContent['hero'] }) => (
       <div className="relative min-h-[448px]">
         <Image
           alt="Fashionable couple wearing Shop.co clothing"
-          className="object-cover object-[53%_8%] md:object-[49%_7%]"
+          className="object-cover object-top"
           fill
           priority
           sizes="(max-width: 768px) 100vw, 50vw"

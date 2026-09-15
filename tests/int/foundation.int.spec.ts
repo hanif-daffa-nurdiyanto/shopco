@@ -19,6 +19,7 @@ import {
   validateVariantSkus,
 } from '@/fields'
 import { getStockStatus, normalizeSku } from '@/libs/product-inventory'
+import { AuthValidationError, parseSignUpInput } from '@/libs/auth-validation'
 import { Brands } from '@/collections/brands-collection'
 import { Categories } from '@/collections/categories-collection'
 import { Products } from '@/collections/products-collection'
@@ -114,6 +115,44 @@ describe('product inventory helpers', () => {
     ).toBe('lowStock')
     expect(getStockStatus({ trackInventory: true, stock: 0 })).toBe('outOfStock')
     expect(getStockStatus({ trackInventory: false, stock: 0 })).toBe('inStock')
+  })
+})
+
+describe('storefront authentication validation', () => {
+  it('normalizes valid customer signup data', () => {
+    expect(
+      parseSignUpInput({
+        email: '  CUSTOMER@Example.com ',
+        name: ' Customer Name ',
+        password: 'shopco123',
+        passwordConfirmation: 'shopco123',
+      }),
+    ).toEqual({
+      email: 'customer@example.com',
+      name: 'Customer Name',
+      password: 'shopco123',
+      passwordConfirmation: 'shopco123',
+    })
+  })
+
+  it('rejects weak and mismatched passwords', () => {
+    expect(() =>
+      parseSignUpInput({
+        email: 'customer@example.com',
+        name: 'Customer Name',
+        password: 'password',
+        passwordConfirmation: 'password',
+      }),
+    ).toThrow(AuthValidationError)
+
+    expect(() =>
+      parseSignUpInput({
+        email: 'customer@example.com',
+        name: 'Customer Name',
+        password: 'password1',
+        passwordConfirmation: 'different1',
+      }),
+    ).toThrow('Passwords do not match.')
   })
 })
 

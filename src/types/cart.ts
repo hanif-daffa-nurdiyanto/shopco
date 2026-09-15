@@ -44,6 +44,26 @@ type ResolvedCart = {
   subtotal: number
 }
 
+type CartPricingConfig = {
+  baseDeliveryFee: number
+  freeDeliveryThreshold?: null | number
+}
+
+type CartPromotionResult = {
+  promotion: {
+    code: string
+    type: 'fixed' | 'percentage'
+    value: number
+  }
+  totals: {
+    deliveryFee: number
+    discount: number
+    subtotal: number
+    tax: number
+    total: number
+  }
+}
+
 type CheckoutAddress = {
   city: string
   country: string
@@ -85,6 +105,8 @@ type CheckoutResult = {
 export type {
   CartIssue,
   CartIssueCode,
+  CartPricingConfig,
+  CartPromotionResult,
   CartSession,
   CartSessionItem,
   CheckoutAddress,

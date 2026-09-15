@@ -1,9 +1,11 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import { CART_UPDATED_EVENT } from '@/libs/cart-events'
+import { ANNOUNCEMENT_DISMISSED_COOKIE } from '@/libs/announcement-cookie'
 import type { HeaderContent } from '@/types/storefront-content'
 
 import { Logo } from './logo'
@@ -11,13 +13,27 @@ import { Logo } from './logo'
 const root = '/images/figma'
 
 type Props = {
+  announcementInitiallyDismissed: boolean
   cartQuantity: number
   content: HeaderContent
+  isAuthenticated: boolean
 }
 
-const SiteHeader = ({ cartQuantity: initialCartQuantity, content }: Props) => {
+const SiteHeader = ({
+  announcementInitiallyDismissed,
+  cartQuantity: initialCartQuantity,
+  content,
+  isAuthenticated,
+}: Props) => {
   const [cartQuantity, setCartQuantity] = useState(initialCartQuantity)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const [announcementDismissed, setAnnouncementDismissed] = useState(announcementInitiallyDismissed)
+
+  const dismissAnnouncement = () => {
+    setAnnouncementDismissed(true)
+
+    document.cookie = `${ANNOUNCEMENT_DISMISSED_COOKIE}=1; Path=/; Max-Age=31536000; SameSite=Lax`
+  }
 
   useEffect(() => {
     const handleCartUpdated = (event: Event) => {
@@ -32,19 +48,27 @@ const SiteHeader = ({ cartQuantity: initialCartQuantity, content }: Props) => {
 
   return (
     <>
-      {content.announcementEnabled && content.announcementMessage && (
-        <div className="relative flex h-[34px] items-center justify-center bg-ink px-10 text-center text-xs text-white md:h-[38px] md:text-sm">
-          {content.announcementMessage}{' '}
-          {content.announcementLinkLabel && (
-            <a className="ml-1 font-medium underline" href={content.announcementLinkUrl}>
-              {content.announcementLinkLabel}
-            </a>
-          )}
-          <button aria-label="Close announcement" className="absolute right-5 hidden md:block">
-            <Image alt="" height={20} src={`${root}/close.svg`} width={20} />
-          </button>
-        </div>
-      )}
+      {content.announcementEnabled &&
+        content.announcementMessage &&
+        !isAuthenticated &&
+        !announcementDismissed && (
+          <div className="relative flex h-[34px] items-center justify-center bg-ink px-10 text-center text-xs text-white md:h-[38px] md:text-sm">
+            {content.announcementMessage}{' '}
+            {content.announcementLinkLabel && (
+              <a className="ml-1 font-medium underline" href={content.announcementLinkUrl}>
+                {content.announcementLinkLabel}
+              </a>
+            )}
+            <button
+              aria-label="Close announcement"
+              className="absolute right-2 flex size-7 items-center justify-center md:right-5"
+              onClick={dismissAnnouncement}
+              type="button"
+            >
+              <Image alt="" height={20} src={`${root}/close.svg`} width={20} />
+            </button>
+          </div>
+        )}
       <header className="relative mx-auto flex h-16 max-w-site items-center gap-4 px-4 md:h-24 md:gap-10 md:px-0">
         <button aria-label="Open menu" className="grid size-6 content-center gap-1 md:hidden">
           <span className="h-0.5 w-5 bg-ink" />
@@ -104,9 +128,9 @@ const SiteHeader = ({ cartQuantity: initialCartQuantity, content }: Props) => {
               </span>
             )}
           </a>
-          <a aria-label={content.accountLabel} href="#">
+          <Link aria-label={content.accountLabel} href="/account">
             <Image alt="" height={24} src={`${root}/account.svg`} width={24} />
-          </a>
+          </Link>
         </div>
         {mobileSearchOpen && (
           <form

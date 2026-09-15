@@ -1,7 +1,6 @@
-import Link from 'next/link'
-
 import type { Product } from '@/types/product'
 import { ProductCard } from './product-card'
+import { ScrollToTopLink } from './scroll-to-top-link'
 
 type Props = { id: string; products: Product[]; title: string; separated?: boolean }
 const ProductSection = ({ id, products, separated = false, title }: Props) => (
@@ -23,12 +22,12 @@ const ProductSection = ({ id, products, separated = false, title }: Props) => (
         No products are available in this section yet.
       </p>
     )}
-    <Link
+    <ScrollToTopLink
       className="mx-auto mt-9 flex h-13 max-w-54.5 items-center justify-center rounded-full border border-black/10"
       href="/category/casual"
     >
       View All
-    </Link>
+    </ScrollToTopLink>
   </section>
 )
 

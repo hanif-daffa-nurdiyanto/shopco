@@ -111,7 +111,7 @@ const resolvePromotion = async (
   req: PayloadRequest,
   promoCode: string | undefined,
   calculationItems: CalculationLine[],
-  customerEmail: string,
+  customerEmail?: string,
 ) => {
   if (!promoCode) return undefined
 
@@ -135,7 +135,7 @@ const resolvePromotion = async (
     )
   }
 
-  if (promotion.usageLimitPerCustomer != null) {
+  if (customerEmail && promotion.usageLimitPerCustomer != null) {
     const usage = await req.payload.count({
       collection: 'orders',
       overrideAccess: true,
@@ -182,7 +182,11 @@ const deductInventory = async (
           .reduce((total, item) => total + item.quantity, 0)
         if (quantity === 0) return variant
         if (variant.stock < quantity) {
-          throw new CheckoutError('insufficientStock', `Insufficient stock for ${product.name}.`, 409)
+          throw new CheckoutError(
+            'insufficientStock',
+            `Insufficient stock for ${product.name}.`,
+            409,
+          )
         }
 
         return { ...variant, stock: variant.stock - quantity }
@@ -258,8 +262,6 @@ const checkout = async (
       select: {
         defaultDeliveryFee: true,
         freeShippingThreshold: true,
-        pricesIncludeTax: true,
-        taxRate: true,
       },
       slug: 'store-settings',
     })) as StoreSetting
@@ -291,7 +293,7 @@ const checkout = async (
       },
       items: calculationItems,
       promotion: promotion ? getPromotionRule(promotion) : undefined,
-      taxRate: settings.pricesIncludeTax ? 0 : settings.taxRate,
+      taxRate: 0,
     })
 
     await deductInventory(req, products, cart.items)
@@ -328,7 +330,7 @@ const checkout = async (
       shippingAddress: input.shippingAddress,
       subtotal: totals.subtotal,
       tax: totals.tax,
-      taxRate: settings.pricesIncludeTax ? 0 : settings.taxRate,
+      taxRate: 0,
       timeline: [
         {
           message: 'Order created from storefront checkout.',
@@ -373,4 +375,4 @@ const checkout = async (
   }
 }
 
-export { CheckoutError, checkout, findOrderByIdempotencyKey }
+export { CheckoutError, checkout, findOrderByIdempotencyKey, getPromotionRule, resolvePromotion }

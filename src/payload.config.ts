@@ -14,6 +14,7 @@ import { Products } from './collections/products-collection'
 import { Promotions } from './collections/promotions-collection'
 import { Reviews } from './collections/reviews-collection'
 import { Users } from './collections/users-collection'
+import { storefrontAuthEndpoints } from './endpoints/storefront-auth'
 import { storefrontCommerceEndpoints } from './endpoints/storefront-commerce'
 import { Footer } from './globals/footer'
 import { Header } from './globals/header'
@@ -43,7 +44,7 @@ export default buildConfig({
     },
   },
   collections: [Users, Media, Brands, Categories, Products, Reviews, Promotions, Orders],
-  endpoints: storefrontCommerceEndpoints,
+  endpoints: [...storefrontAuthEndpoints, ...storefrontCommerceEndpoints],
   globals: [StoreSettings, Header, Footer, Homepage],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

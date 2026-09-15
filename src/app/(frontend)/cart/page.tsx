@@ -16,7 +16,7 @@ const generateMetadata = async (): Promise<Metadata> => {
 }
 
 const CartPage = async () => {
-  const cart = await getServerCart()
+  const [cart, settings] = await Promise.all([getServerCart(), getStoreSettings()])
 
   return (
     <main className="mx-auto max-w-site border-t border-black/10 px-4 pt-5 md:px-0 md:pt-6">
@@ -24,7 +24,13 @@ const CartPage = async () => {
       <h1 className="font-display mt-6 text-[32px] leading-none font-bold uppercase md:text-[40px]">
         Your cart
       </h1>
-      <CartContent initialCart={cart} />
+      <CartContent
+        initialCart={cart}
+        pricing={{
+          baseDeliveryFee: settings.defaultDeliveryFee,
+          freeDeliveryThreshold: settings.freeShippingThreshold,
+        }}
+      />
     </main>
   )
 }

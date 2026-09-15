@@ -20,7 +20,7 @@ const SiteFooter = ({ content }: { content: FooterContent }) => (
       </div>
     )}
     <div className="bg-surface px-4 pb-8 pt-10 md:pt-12">
-      <div className="mx-auto grid max-w-site gap-10 md:grid-cols-[248px_1fr] md:gap-28">
+      <div className="mx-auto grid max-w-site gap-10 lg:grid-cols-[248px_1fr] lg:gap-28">
         <div>
           <Logo text={content.logoText} />
           <p className="mt-6 text-sm leading-[22px] text-muted">{content.brandDescription}</p>
@@ -28,21 +28,24 @@ const SiteFooter = ({ content }: { content: FooterContent }) => (
             {content.socialLinks.map((social) => (
               <a
                 aria-label={social.label}
-                className="flex size-7 items-center justify-center rounded-full border border-black/20 bg-white"
+                className="flex size-7 items-center justify-center rounded-full border border-black/20 bg-white text-ink transition-colors duration-200 hover:border-ink hover:bg-ink hover:text-white focus-visible:border-ink focus-visible:bg-ink focus-visible:text-white focus-visible:outline-none"
                 href={social.url}
                 key={social.platform}
               >
-                <Image
-                  alt=""
-                  height={13}
-                  src={`/images/figma/${social.platform}.svg`}
-                  width={13}
+                <span
+                  aria-hidden="true"
+                  className="block size-3.5 bg-current [mask-position:center] [mask-repeat:no-repeat] [mask-size:contain]"
+                  data-social-icon={social.platform}
+                  style={{
+                    WebkitMaskImage: `url('/images/figma/${social.platform}.svg')`,
+                    maskImage: `url('/images/figma/${social.platform}.svg')`,
+                  }}
                 />
               </a>
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
           {content.linkGroups.map((group) => (
             <div key={group.heading}>
               <h3 className="font-medium tracking-[3px] uppercase">{group.heading}</h3>

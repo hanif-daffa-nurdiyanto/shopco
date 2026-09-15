@@ -104,6 +104,24 @@ describe.sequential('Payload foundation', () => {
     expect(result.user?.status).toBe('active')
   })
 
+  it('forces storefront signup records to the customer role', async () => {
+    const signupCustomer = await payload.create({
+      collection: 'users',
+      context: { customerSignup: true },
+      data: {
+        email: `signup-${uniqueKey}@example.com`,
+        name: 'Storefront Signup Customer',
+        password: 'integration-password1',
+        roles: ['admin'],
+        status: 'inactive',
+      },
+      overrideAccess: true,
+    })
+
+    expect(signupCustomer.roles).toEqual(['customer'])
+    expect(signupCustomer.status).toBe('active')
+  })
+
   it('restricts customer user queries to their own document', async () => {
     const result = await payload.find({
       collection: 'users',

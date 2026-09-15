@@ -161,9 +161,9 @@ const brandDefinitions = [
 
 const categoryDefinitions = [
   { name: 'Casual', slug: 'casual', image: 'style-casual' },
-  { name: 'Formal', slug: 'formal', image: 'style-formal' },
-  { name: 'Party', slug: 'party', image: 'style-party' },
-  { name: 'Gym', slug: 'gym', image: 'style-gym' },
+  { name: 'Formal', slug: 'formal', image: 'style-party' },
+  { name: 'Party', slug: 'party', image: 'style-gym' },
+  { name: 'Gym', slug: 'gym', image: 'style-formal' },
 ] as const
 
 const productDefinitions: ProductDefinition[] = [
@@ -674,7 +674,7 @@ const seedShopco = async (payload: Payload) => {
       announcementEnabled: true,
       announcementMessage: 'Sign up and get 20% off your first order.',
       announcementLinkLabel: 'Sign Up Now',
-      announcementLinkUrl: '/signup',
+      announcementLinkUrl: '/sign-up',
       logoType: 'text',
       logoText: 'SHOP.CO',
       navigationItems: [

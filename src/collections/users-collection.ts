@@ -33,6 +33,14 @@ const Users: CollectionConfig = {
       async ({ data, operation, req }) => {
         if (operation !== 'create') return data
 
+        if (req.context.customerSignup === true) {
+          return {
+            ...data,
+            roles: ['customer'],
+            status: 'active',
+          }
+        }
+
         const { totalDocs } = await req.payload.count({
           collection: 'users',
           overrideAccess: true,
